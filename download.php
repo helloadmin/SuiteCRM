@@ -126,16 +126,16 @@ else {
 
 		if($file_type == 'documents') {
 			// cn: bug 9674 document_revisions table has no 'name' column.
-			$query = "SELECT filename name FROM document_revisions INNER JOIN documents ON documents.id = document_revisions.document_id ";
+			$query = "SELECT filename as name FROM document_revisions INNER JOIN documents ON documents.id = document_revisions.document_id ";
 			$query .= "WHERE document_revisions.id = '".$db->quote($_REQUEST['id'])."' ";
 		} elseif($file_type == 'kbdocuments') {
-				$query="SELECT document_revisions.filename name	FROM document_revisions INNER JOIN kbdocument_revisions ON document_revisions.id = kbdocument_revisions.document_revision_id INNER JOIN kbdocuments ON kbdocument_revisions.kbdocument_id = kbdocuments.id ";
+				$query="SELECT document_revisions.filename as name	FROM document_revisions INNER JOIN kbdocument_revisions ON document_revisions.id = kbdocument_revisions.document_revision_id INNER JOIN kbdocuments ON kbdocument_revisions.kbdocument_id = kbdocuments.id ";
             $query .= "WHERE document_revisions.id = '" . $db->quote($_REQUEST['id']) ."'";
 		}  elseif($file_type == 'notes') {
-            $query = "SELECT filename name, file_mime_type FROM notes ";
+            $query = "SELECT filename as name, file_mime_type FROM notes ";
 			$query .= "WHERE notes.id = '" . $db->quote($_REQUEST['id']) ."'";
 		} elseif( !isset($_REQUEST['isTempFile']) && !isset($_REQUEST['tempName'] ) && isset($_REQUEST['type']) && $file_type!='temp' ){ //make sure not email temp file.
-			$query = "SELECT filename name FROM ". $file_type ." ";
+			$query = "SELECT filename as name FROM ". $file_type ." ";
 			$query .= "WHERE ". $file_type .".id= '".$db->quote($_REQUEST['id'])."'";
 		}elseif( $file_type == 'temp'){
 			$doQuery = false;

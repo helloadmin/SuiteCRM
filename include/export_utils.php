@@ -342,6 +342,11 @@ function export($type, $records = null, $members = false, $sample=false) {
                             $value = implode(",",$valueArray);
                         }
                         break;
+	                    // Bug 62075 - Export to CSV for fields of type TEXT is not working properly
+                     case 'text':
+                     	$value = trim(preg_replace('/\s\s+/', ' ', $value));
+                     	break;
+ 						
                 }
             }
 

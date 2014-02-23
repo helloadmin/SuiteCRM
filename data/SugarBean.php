@@ -5120,15 +5120,17 @@ class SugarBean
             return '';
         }
 
-
+/**
+* Add "as" SQL Key for PostgreSQL
+*/
         if(isset($GLOBALS['dictionary'][$object]['fields']['assigned_user_id']))
         {
-            $query .= " , ".	$table  . ".assigned_user_id owner";
+            $query .= " , ".	$table  . ".assigned_user_id as owner";
 
         }
         else if(isset($GLOBALS['dictionary'][$object]['fields']['created_by']))
         {
-            $query .= " , ".	$table . ".created_by owner";
+            $query .= " , ".	$table . ".created_by as owner";
 
         }
         $query .=  ' FROM ' . $table . ' WHERE deleted=0 AND id=';
