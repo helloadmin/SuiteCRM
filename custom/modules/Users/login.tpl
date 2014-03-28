@@ -111,11 +111,18 @@ var LBL_HIDEOPTIONS = '{sugar_translate module="Users" label="LBL_HIDEOPTIONS"}'
 										<td scope="row"><label for="user_password">{sugar_translate module="Users" label="LBL_PASSWORD"}:</label></td>
 										<td width="30%"><input type="password" size='26' tabindex="2" id="user_password" name="user_password" value='{$LOGIN_PASSWORD}' /></td>
 									</tr>
-
 									<tr>
 										<td>&nbsp;</td>
-										<td><input title="{sugar_translate module="Users" label="LBL_LOGIN_BUTTON_TITLE"}"  class="button primary" class="button primary" type="submit" tabindex="3" id="login_button" name="Login" value="{sugar_translate module="Users" label="LBL_LOGIN_BUTTON_LABEL"}"><br>&nbsp;</td>
+										<td><input title="{sugar_translate module="Users" label="LBL_LOGIN_BUTTON_TITLE"}"  class="button primary" class="button primary" type="submit" tabindex="3" id="login_button" name="Login" value="{sugar_translate module="Users" label="LBL_LOGIN_BUTTON_LABEL"}"><br>&nbsp;
+                                        
+                                        {if $USE_GOOGLE_OAUTH}
+                                        <div><a href="?module=Users&action=GoAuth"><img src="include/images/googleconnect3.png" style="width:200px;height:35px;"/></a></div>
+                                         {/if}
+                                        </td>
 									</tr>
+                                    
+                                    
+                                    
 								</table>
 							</form>
 							

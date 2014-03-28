@@ -138,6 +138,8 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function query($sql, $dieOnError = false, $msg = '', $suppress = false, $keepResult = false)
 	{
+			$GLOBALS['log']->fatal("query");  //dzfordebug
+		
 		if(is_array($sql)) {
 			return $this->queryArray($sql, $dieOnError, $msg, $suppress);
 		}
@@ -148,6 +150,8 @@ class PostgreSQLManager extends DBManager
 		$this->query_time = microtime(true);
 		$this->lastsql = $sql;
 		$result = $suppress?@pg_query($this->database, $sql):pg_query($this->database, $sql);
+		
+		$GLOBALS['log']->fatal("SQL:: ". $sql);  //dzfordebug
 		
 		$this->query_time = microtime(true) - $this->query_time;
 		$GLOBALS['log']->info('Query Execution Time:'.$this->query_time);
@@ -166,6 +170,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getAffectedRowCount($result)
 	{
+		$GLOBALS['log']->fatal("getAffectedRowCount");  //dzfordebug
 		return pg_affected_rows($result);
 	}
 
@@ -175,6 +180,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getRowCount($result)
 	{
+		$GLOBALS['log']->fatal("getRowCount");  //dzfordebug
 	    return pg_num_rows($result);
 	}
 
@@ -198,6 +204,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	protected function freeDbResult($dbResult)
 	{
+		$GLOBALS['log']->fatal("freeDbResult");  //dzfordebug
 		if(!empty($dbResult))
 			pg_free_result($dbResult);
 	}
@@ -208,6 +215,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	protected function hasLimit($sql)
 	{
+		$GLOBALS['log']->fatal("hasLimit");  //dzfordebug
 	    return stripos($sql, " limit ") !== false;
 	}
 
@@ -218,6 +226,7 @@ class PostgreSQLManager extends DBManager
 	 * @return boolean
 	 */
 	protected function hasShowCommand($sql) {
+		$GLOBALS['log']->fatal("hasShowCommand");  //dzfordebug
 		return stripos($sql, "SHOW") !== false;
 	}
 	
@@ -227,6 +236,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function limitQuery($sql, $start, $count, $dieOnError = false, $msg = '', $execute = true)
 	{
+		$GLOBALS['log']->fatal("limitQuery");  //dzfordebug
 		if($this->hasShowCommand($sql))
 			return $this->query($sql, $dieOnError, $msg);
 		
@@ -257,6 +267,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function get_columns($tablename)
 	{
+		$GLOBALS['log']->fatal("get_columns");  //dzfordebug
 		//find all unique indexes and primary keys.
 		$result = $this->query(
             "SELECT ordinal_position, column_name, 
@@ -308,6 +319,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getFieldsArray($result, $make_lower_case=false)
 	{
+		$GLOBALS['log']->fatal("getFieldsArray");  //dzfordebug
 		$field_array = array();
 
 		if(empty($result))
@@ -334,6 +346,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function fetchRow($result)
 	{
+		$GLOBALS['log']->fatal("fetchRow");  //dzfordebug
 		if (empty($result))	
 			return false;
 
@@ -346,6 +359,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getTablesArray()
 	{
+		$GLOBALS['log']->fatal("getAffectedRowCount");  //dzfordebug
 		$this->log->debug('Fetching table list');
 
 		if ($this->getDatabase()) {
@@ -377,6 +391,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function version()
 	{
+		$GLOBALS['log']->fatal("version");  //dzfordebug
 		return $this->getOne("SHOW server_version");
 	}
 
@@ -386,6 +401,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function tableExists($tableName)
 	{
+		$GLOBALS['log']->fatal("tableExists:". $tableName);  //dzfordebug
 		$this->log->info("tableExists: $tableName");
 
 		if ($this->getDatabase()) {	
@@ -409,10 +425,15 @@ class PostgreSQLManager extends DBManager
 										  AND c.relkind='r' AND c.relname LIKE '$tableName%'
 										ORDER BY 1,2;");
 			
-			if(empty($result)) 
+			if(empty($result)) { 
+					$GLOBALS['log']->fatal("tableExists: $tableName". " False");  //dzfordebug
 				return false;
+			}
 			
 			$row = $this->fetchByAssoc($result);
+			$GLOBALS['log']->fatal("tableExists: $tableName". " True");  //dzfordebug
+			$GLOBALS['log']->fatal("tableExists: $tableName". implode($result));  //dzfordebug
+			
 			return !empty($row);
 		}
 
@@ -425,6 +446,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function tablesLike($like)
 	{
+		$GLOBALS['log']->fatal("tablesLike");  //dzfordebug
 		if ($this->getDatabase()) {
 			$tables = array();
 			
@@ -497,7 +519,14 @@ class PostgreSQLManager extends DBManager
 				" dbname=".$configOptions['db_name']
 				);
 			if(empty($this->database)) {
+				
 				$GLOBALS['log']->fatal("Could not connect to server ".$configOptions['db_host_name']." as ".$configOptions['db_user_name']);
+				$GLOBALS['log']->fatal("More: ".
+				"host=".$configOptions['db_host_name'] .
+				" user=".$configOptions['db_user_name'] .
+				" password=".$configOptions['db_password'].
+				" dbname=".$configOptions['db_name']);
+
 				if($dieOnError) {
 					if(isset($GLOBALS['app_strings']['ERR_NO_DB'])) {
 						sugar_die($GLOBALS['app_strings']['ERR_NO_DB']);
@@ -534,6 +563,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function repairTableParams($tablename, $fielddefs, $indices, $execute = true, $engine = null)
 	{
+		$GLOBALS['log']->fatal("repairTableParams");  //dzfordebug
         //Modules with names close to 63 characters may have index names over 63 characters, we need to clean them
         foreach ($indices as $key => $value) {
             $indices[$key]['name'] = $this->getValidDBName($value['name'], true, 'index');
@@ -549,6 +579,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function convert($string, $type, array $additional_parameters = array())
 	{
+		$GLOBALS['log']->fatal("convert");  //dzfordebug
 	    if (!empty($additional_parameters)) {
             $additional_parameters_string = ','.implode(',',$additional_parameters);
         } else {
@@ -625,6 +656,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function fromConvert($string, $type)
 	{
+		$GLOBALS['log']->fatal("fromConvert");  //dzfordebug
 		return $string;
 	}
 
@@ -634,9 +666,14 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function createTableSQL(SugarBean $bean)
 	{
+		$GLOBALS['log']->fatal("createTableSQL");  //dzfordebug
 		$tablename = $bean->getTableName();
 		$fieldDefs = $bean->getFieldDefinitions();
 		$indices   = $bean->getIndices();
+		
+		$GLOBALS['log']->fatal("createTableSQL:: ". $tablename);  //dzfordebug
+
+		
 		return $this->createTableSQLParams($tablename, $fieldDefs, $indices);
 	}
 
@@ -646,6 +683,8 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function createTableSQLParams($tablename, $fieldDefs, $indices)
 	{
+		$GLOBALS['log']->fatal("createTableSQLParams");  //dzfordebug
+	
 		$columns = $this->columnSQLRep($fieldDefs, false, $tablename);
 		if (empty($columns))
 			return false;
@@ -660,6 +699,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	protected function oneColumnSQLRep($fieldDef, $ignoreRequired = false, $table = '', $return_as_array = false)
 	{
+		// $GLOBALS['log']->fatal("oneColumnSQLRep");  //dzfordebug
 		// always return as array for post-processing
 		$ref = parent::oneColumnSQLRep($fieldDef, $ignoreRequired, $table, true);
 
@@ -679,6 +719,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	protected function changeColumnSQL($tablename, $fieldDefs, $action, $ignoreRequired = false)
 	{
+		$GLOBALS['log']->fatal("changeColumnSQL");  //dzfordebug
 		$columns = array();
 		$columnsAlter = array();
 		
@@ -737,6 +778,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function setAutoIncrement($table, $field_name)
 	{
+		$GLOBALS['log']->fatal("setAutoIncrement");  //dzfordebug
 		$this->deleteAutoIncrement($table, $field_name);
 		$this->query("CREATE SEQUENCE  {$this->getSequenceName($table, $field_name)} 
 			INCREMENT BY 1 NO MAXVALUE START WITH 1");
@@ -748,6 +790,7 @@ class PostgreSQLManager extends DBManager
 	 * @see DBHelper::deleteAutoIncrement()
 	 */
 	public function deleteAutoIncrement($table, $field_name) {
+		$GLOBALS['log']->fatal("deleteAutoIncrement");  //dzfordebug
 		$sequence_name = $this->getSequenceName($table, $field_name);
 		if ($this->findSequence($sequence_name)) {
 			$this->query('DROP SEQUENCE ' .$sequence_name);
@@ -760,6 +803,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function setAutoIncrementStart($table, $field_name, $start_value)
 	{
+		$GLOBALS['log']->fatal("setAutoIncrementStart");  //dzfordebug
 		$start_value = (int)$start_value;
 		return $this->query( "ALTER SEQUENCE " . 
 			$this->getSequenceName($table, $field_name, false) . 
@@ -772,6 +816,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getAutoIncrement($table, $field_name)
 	{
+		$GLOBALS['log']->fatal("getAutoIncrement");  //dzfordebug
 		return $this->getOne("SELECT nextval('".$this->getSequenceName($table, $field_name) . "')");
 	}
 
@@ -781,6 +826,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getAutoIncrementSQL($table, $field_name)
 	{
+		$GLOBALS['log']->fatal("getAutoIncrementSQL");  //dzfordebug
 		return "nextval('".$this->getSequenceName($table, $field_name) . "')";
 	}
 	
@@ -790,6 +836,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function get_indices($tablename)
 	{
+		$GLOBALS['log']->fatal("get_indices");  //dzfordebug
 		//find all unique indexes and primary keys.
 		$result = $this->query("SELECT c2.relname, i.indisprimary, 
 										i.indisunique, i.indisclustered,
@@ -829,6 +876,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function add_drop_constraint($table, $definition, $drop = false)
 	{
+		$GLOBALS['log']->fatal("add_drop_constraint");  //dzfordebug
         $type         = $definition['type'];
         $fields       = is_array($definition['fields'])?implode(',',$definition['fields']):$definition['fields'];
         $name         = $this->getValidDBName($definition['name'], true, 'index');
@@ -880,6 +928,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function fetchOne($sql, $dieOnError = false, $msg = '', $suppress = false)
 	{
+		$GLOBALS['log']->fatal("fetchOne");  //dzfordebug
 		if(stripos($sql, ' LIMIT ') === false) {
 			$sql .= " LIMIT 1";
 		}
@@ -892,6 +941,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function full_text_indexing_installed($dbname = null)
 	{
+		$GLOBALS['log']->fatal("full_text_indexing_installed");  //dzfordebug
 		return true;
 	}
 
@@ -901,6 +951,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function massageFieldDef(&$fieldDef, $tablename)
 	{
+		$GLOBALS['log']->fatal("massageFieldDef");  //dzfordebug
 		parent::massageFieldDef($fieldDef,$tablename);
 
         if ($fieldDef['name'] == 'id')
@@ -945,6 +996,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function dropTableNameSQL($name)
 	{
+		$GLOBALS['log']->fatal("dropTableNameSQL:: ".$name);  //dzfordebug
 		return "DROP TABLE IF EXISTS ${name};";
 	}
 	
@@ -954,6 +1006,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function truncateTableSQL($name)
 	{
+		$GLOBALS['log']->fatal("truncateTableSQL");  //dzfordebug
 		return "TRUNCATE TABLE $name";
 	}
 	
@@ -963,6 +1016,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getDefaultCollation()
 	{
+		$GLOBALS['log']->fatal("getDefaultCollation");  //dzfordebug
 		$q = "SHOW lc_collate";
 		$r = $this->query($q);
 		$res = array();
@@ -978,6 +1032,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getCollationList()
 	{
+		$GLOBALS['log']->fatal("getCollationList");  //dzfordebug
 		$q = "SHOW lc_collate";
 		$r = $this->query($q);
 		$res = array();
@@ -993,6 +1048,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function renameColumnSQL($tablename, $column, $newname)
 	{
+		$GLOBALS['log']->fatal("renameColumnSQL");  //dzfordebug
 		return "ALTER TABLE $tablename RENAME COLUMN $column TO $newname";
 	}
 
@@ -1002,6 +1058,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function renameIndexDefs($old_definition, $new_definition, $table_name)
 	{
+		$GLOBALS['log']->fatal("renameIndexDefs");  //dzfordebug
 		$old_definition['name'] = $this->getValidDBName($old_definition['name'], true, 'index');
 		$new_definition['name'] = $this->getValidDBName($new_definition['name'], true, 'index');
 		return "ALTER INDEX {$old_definition['name']} RENAME TO {$new_definition['name']}";
@@ -1013,6 +1070,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function emptyValue($type)
 	{
+		$GLOBALS['log']->fatal("emptyValue");  //dzfordebug
 	    $ctype = $this->getColumnType($type);
         if($ctype == "datetime") {
             return $this->convert($this->quoted("1970-01-01 00:00:00"), "datetime");
@@ -1063,6 +1121,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getFulltextQuery($field, $terms, $must_terms = array(), $exclude_terms = array())
 	{
+		$GLOBALS['log']->fatal("getFulltextQuery");  //dzfordebug
         $condition = $or_condition = array();
         foreach($must_terms as $term) {
             $condition[] = $this->quoteTerm($term);
@@ -1090,6 +1149,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	protected function getCharsetInfo()
 	{
+		$GLOBALS['log']->fatal("getCharsetInfo");  //dzfordebug
 		$charsets = array();
 		$res = $this->query("SHOW lc_ctype");
 		while($row = $this->fetchByAssoc($res)) {
@@ -1104,6 +1164,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getDbInfo()
 	{
+		$GLOBALS['log']->fatal("getDbInfo");  //dzfordebug
 		$charsets = $this->getCharsetInfo();
 		$charset_str = array();
 		foreach($charsets as $name => $value) {
@@ -1124,6 +1185,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function validateQuery($query)
 	{
+		$GLOBALS['log']->fatal("validateQuery");  //dzfordebug
 		$res = $this->query("EXPLAIN $query");
 		return !empty($res);
 	}
@@ -1134,6 +1196,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function dbExists($dbname)
 	{
+		$GLOBALS['log']->fatal("dbExists");  //dzfordebug
 		$db = $this->getOne("SELECT d.datname as Name,
 		       pg_catalog.pg_get_userbyid(d.datdba) as Owner,
 		       pg_catalog.pg_encoding_to_char(d.encoding) as Encoding,
@@ -1150,6 +1213,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function userExists($username)
 	{
+		$GLOBALS['log']->fatal("userExists");  //dzfordebug
 		$user = $this->getOne("SELECT r.rolname, r.rolsuper, r.rolinherit,
 								  r.rolcreaterole, r.rolcreatedb, r.rolcanlogin,
 								  r.rolconnlimit,
@@ -1169,6 +1233,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function createDbUser($database_name, $host_name, $user, $password)
 	{
+		$GLOBALS['log']->fatal("createDbUser");  //dzfordebug
 		$qpassword = $this->quote($password);
 		$this->query("CREATE USER $user WITH LOGIN ENCRYPTED PASSWORD '{$qpassword}';");
 		$this->query("ALTER DATABASE $database_name OWNER TO $user");
@@ -1180,6 +1245,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function createDatabase($dbname)
 	{
+		$GLOBALS['log']->fatal("createDatabase");  //dzfordebug
 		$this->query("CREATE DATABASE $dbname WITH 
 						ENCODING='UTF8' 
 						LC_COLLATE='en_US.UTF-8' 
@@ -1192,6 +1258,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function dropDatabase($dbname)
 	{
+		$GLOBALS['log']->fatal("dropDatabase");  //dzfordebug
 		return $this->query("DROP DATABASE IF EXISTS `$dbname`", true);
 	}
 	
@@ -1201,6 +1268,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function valid()
 	{
+		$GLOBALS['log']->fatal("valid");  //dzfordebug
 		return function_exists("pg_connect");
 	}
 
@@ -1210,6 +1278,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function canInstall()
 	{
+		$GLOBALS['log']->fatal("canInstall");  //dzfordebug
 		$db_version = $this->version();
 		$GLOBALS['log']->info("PostgreSQL Server Info:" . $db_version);
 		
@@ -1229,6 +1298,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function installConfig()
 	{
+		$GLOBALS['log']->fatal("installConfig");  //dzfordebug
 		return array(
 			'LBL_DBCONFIG_MSG3' =>  array(
 				"setup_db_database_name" => array("label" => 'LBL_DBCONF_DB_NAME', "required" => true),
@@ -1256,6 +1326,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	protected function generateMD5Name($name, $length = 6)
 	{
+		$GLOBALS['log']->fatal("generateMD5Name");  //dzfordebug
 		$md5_name = md5($name);
 		return substr($md5_name, 0, $length);
 	}
@@ -1271,6 +1342,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	protected function getSequenceName($table, $field_name, $upper_case = false)
 	{
+		$GLOBALS['log']->fatal("getSequenceName");  //dzfordebug
 		$sequence_name = $table. '_' .$field_name . '_seq';
 		
 		if(strlen($sequence_name) > 63)
@@ -1289,6 +1361,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	protected function findSequence($name)
 	{
+		$GLOBALS['log']->fatal("findSequence");  //dzfordebug
 		static $sequences;
 
 		if ( !is_array($sequences) ) {
@@ -1311,6 +1384,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getFromDummyTable()
 	{
+		$GLOBALS['log']->fatal("getFromDummyTable");  //dzfordebug
 		return "";
 	}
 
@@ -1320,6 +1394,7 @@ class PostgreSQLManager extends DBManager
 	 */
 	public function getGuidSQL()
 	{
+		$GLOBALS['log']->fatal("getGuidSQL");  //dzfordebug
 		return "uuid_generate_v1()";
 	}
 	

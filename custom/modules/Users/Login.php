@@ -204,6 +204,9 @@ if ( !empty($logindisplay) )
 			 		<a class='recaptcha_only_if_audio' href='javascript:Recaptcha.switch_type(\"image\")'> ".$mod_strings['LBL_RECAPTCHA_IMAGE']."</a>
 		 	</td>
 		</tr>";
+		
+		
+		
 		$sugar_smarty->assign('CAPTCHA', $Captcha);
 		echo $captcha_js;
 
@@ -212,5 +215,7 @@ if ( !empty($logindisplay) )
 		function validateAndSubmit(){generatepwd();}
 		</script>";
 	}
+$sugar_smarty->assign('USE_GOOGLE_OAUTH', isset($GLOBALS['sugar_config']['gplus']['client_id']));
+	
 
 $sugar_smarty->display('custom/modules/Users/login.tpl'); ?>

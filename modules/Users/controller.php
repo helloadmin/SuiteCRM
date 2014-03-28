@@ -116,5 +116,11 @@ class UsersController extends SugarController
         $this->view = 'fts';
         $GLOBALS['current_user']->setPreference('fts_disabled_modules', $_REQUEST['disabled_modules']);
     }
+	
+	    public function action_goauth()
+    {
+
+        $this->view = 'GoAuth';
+    }
 }	
 ?>

@@ -235,7 +235,7 @@ class Zend_Gdata_HttpClient extends Zend_Http_Client
                 $headers['authorization'] = 'AuthSub token="' . $this->getAuthSubToken() . '"';
             }
         } elseif ($this->getClientLoginToken() != null) {
-            $headers['authorization'] = 'GoogleLogin auth=' . $this->getClientLoginToken();
+            $headers['authorization'] = 'GoAuth auth=' . $this->getClientLoginToken();
         }
         return array('method' => $method, 'url' => $url, 'body' => $body, 'headers' => $headers, 'contentType' => $contentType);
     }
