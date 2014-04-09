@@ -321,7 +321,7 @@ case $1 in
 		/bin/echo "$LICENSE"
 		exit 0
 	;;
-	*)
+	--help)
 		/bin/echo
 		/bin/echo "This script should be called as:"
 		/bin/echo "  installpbx option1 option2"
@@ -344,38 +344,21 @@ case $1 in
 		/bin/echo 
 		exit 0
 	;;
+	*)
+		INSFREESWITCH=0
+		UPGFREESWITCH=0
+ 		DEBUG=0
+	;;
 esac
 
 case $2 in
 	user)
 		DEBUG=1
 	;;
-	auto)
+	*)
 		DEBUG=0
 	;;
-		*)
-		/bin/echo
-		/bin/echo "This script should be called as:"
-		/bin/echo "  installpbx option1 option2"
-		/bin/echo
-		/bin/echo "    option1:"
-		/bin/echo "      installpbx"
-		/bin/echo "      upgradepbx"
-		/bin/echo "      fix-https"
-		/bin/echo "      fix-permissions"
-		/bin/echo "      version|--version|-v"
-		/bin/echo
-		/bin/echo "    option2:"
-		/bin/echo "      user: option waits in certain places for the user to check for errors"
-		/bin/echo "            it is interactive and prompts you about what to install"		
-		/bin/echo "      auto: tries an automatic install. Get a cup of coffee, this will"
-		/bin/echo "            take a while. FOR THE BRAVE!"
-		/bin/echo 
-		/bin/echo "      EXAMPLE"
-		/bin/echo "         installpbx installpbx user"
-		/bin/echo 
-		exit 0
-	;;
+
 esac
 
 
@@ -508,37 +491,10 @@ if [ $INSFREESWITCH -eq 1 ]; then
 		/bin/echo "Git Already Done. Skipping"	
 	else
 		cd /usr/src
-		if [ "$FSSTABLE" == true ]; then
-			echo "installing stable $FSStableVer of FreeSWITCH"
-			/usr/bin/time /usr/bin/git clone $FSGIT
-			cd /usr/src/freeswitch
-			/usr/bin/git checkout $FSStableVer
-			if [ $? -ne 0 ]; then
-				#git had an error
-				/bin/echo "GIT ERROR"
-				exit 1
-			fi
-		else
-			echo "going dev branch.  Hope this works for you."
-			/usr/bin/time /usr/bin/git clone $FSGIT
-			if [ $? -ne 0 ]; then
-				#git had an error
-				/bin/echo "GIT ERROR"
-				exit 1
-			fi
-
-			if [ $FSCHECKOUTVER == true ]; then
-				echo "OK we'll check out FreeSWITCH version $FSREV"
-				cd /usr/src/freeswitch
-				/usr/bin/git checkout $FSREV
-				if [ $? -ne 0 ]; then
-					#git checkout had an error
-					/bin/echo "GIT CHECKOUT ERROR"
-					exit 1
-				fi
-			fi
-			/bin/echo "git_done" >> /tmp/install_fusion_status
-		fi
+		/usr/bin/time /usr/bin/git clone -b v1.2.stable git://git.freeswitch.org/freeswitch.git
+		# /usr/bin/time /usr/bin/git clone -b v1.4.beta git://git.freeswitch.org/freeswitch.git
+		cd /usr/src/freeswitch
+		/bin/echo "git_done" >> /tmp/install_fusion_status
 	fi
 
 	if [ -e /usr/src/FreeSWITCH ]; then
