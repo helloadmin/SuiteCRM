@@ -1,3 +1,4 @@
+ls
 #!/bin/bash
 
 # install_pbx
@@ -38,9 +39,11 @@ modules_add=( mod_spandsp mod_dingaling mod_callcenter mod_lcr mod_cidlookup mod
 #DEFINES
 #-------
 
-FSGIT=git://github.com/FreeSWITCH/FreeSWITCH.git
+FSGIT=git://git.freeswitch.org/freeswitch.git
 FSSTABLE=true
 FSStableVer="v1.2.stable"
+#FSStableVer="v1.4.beta"
+
 
 #right now, make -j not working. see: jira FS-3005
 #CORES=$(/bin/grep processor -c /proc/cpuinfo)
@@ -60,7 +63,7 @@ UPGFREESWITCH=0
 #FUNCTIONS
 #---------
 
-function fusionfail2ban {
+function suitefail2ban {
 
 /bin/cat > /etc/fail2ban/filter.d/$GUI_NAME.conf  <<'DELIM'
 # Fail2Ban configuration file
@@ -345,9 +348,8 @@ case $1 in
 		exit 0
 	;;
 	*)
-		INSFREESWITCH=0
+		INSFREESWITCH=1
 		UPGFREESWITCH=0
- 		DEBUG=0
 	;;
 esac
 
@@ -358,7 +360,6 @@ case $2 in
 	*)
 		DEBUG=0
 	;;
-
 esac
 
 
@@ -428,8 +429,8 @@ if [ $INSFREESWITCH -eq 1 ]; then
 	/bin/echo "ldconfig is finished"
 	/bin/echo
 
-	if [ ! -e /tmp/install_fusion_status ]; then
-		touch /tmp/install_fusion_status
+	if [ ! -e /tmp/install_suite_status ]; then
+		touch /tmp/install_suite_status
 	fi
 
 	if [ $DEBUG -eq 1 ]; then
@@ -486,15 +487,43 @@ if [ $INSFREESWITCH -eq 1 ]; then
 	#------------------------
 	# GIT FREESWITCH
 	#------------------------
-	/bin/grep 'git_done' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'git_done' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "Git Already Done. Skipping"	
 	else
+		
 		cd /usr/src
-		/usr/bin/time /usr/bin/git clone -b v1.2.stable git://git.freeswitch.org/freeswitch.git
-		# /usr/bin/time /usr/bin/git clone -b v1.4.beta git://git.freeswitch.org/freeswitch.git
-		cd /usr/src/freeswitch
-		/bin/echo "git_done" >> /tmp/install_fusion_status
+		if [ "$FSSTABLE" == true ]; then
+			echo "installing stable $FSStableVer of FreeSWITCH"
+			/usr/bin/time /usr/bin/git clone -b $FSStableVer $FSGIT
+			cd /usr/src/freeswitch
+			/usr/bin/git checkout $FSStableVer
+			if [ $? -ne 0 ]; then
+				#git had an error
+				/bin/echo "GIT ERROR"
+				exit 1
+			fi
+		else
+			echo "going dev branch.  Hope this works for you."
+			/usr/bin/time /usr/bin/git clone $FSGIT
+			if [ $? -ne 0 ]; then
+				#git had an error
+				/bin/echo "GIT ERROR"
+				exit 1
+			fi
+
+			if [ $FSCHECKOUTVER == true ]; then
+				echo "OK we'll check out FreeSWITCH version $FSREV"
+				cd /usr/src/freeswitch
+				/usr/bin/git checkout $FSREV
+				if [ $? -ne 0 ]; then
+					#git checkout had an error
+					/bin/echo "GIT CHECKOUT ERROR"
+					exit 1
+				fi
+			fi
+			/bin/echo "git_done" >> /tmp/install_suite_status
+		fi
 	fi
 
 	if [ -e /usr/src/FreeSWITCH ]; then
@@ -511,7 +540,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 	#------------------------
 	# BOOTSTRAP FREESWITCH
 	#------------------------
-	/bin/grep 'bootstrap_done' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'bootstrap_done' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "Bootstrap already done. skipping"
 	else
@@ -547,7 +576,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 			/bin/echo "BOOTSTRAP ERROR"
 			exit 1
 		else
-			/bin/echo "bootstrap_done" >> /tmp/install_fusion_status
+			/bin/echo "bootstrap_done" >> /tmp/install_suite_status
 		fi
 	fi
 
@@ -559,7 +588,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 	#------------------------
 	# build modules.conf 
 	#------------------------
-	/bin/grep 'build_modules' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'build_modules' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "Modules.conf Already edited"	
 	else
@@ -571,7 +600,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 			/bin/echo "ERROR: Failed to enable build modules in modules.conf."
 			exit 1
 		else
-			/bin/echo "build_modules" >> /tmp/install_fusion_status
+			/bin/echo "build_modules" >> /tmp/install_suite_status
 		fi
 	fi
 
@@ -583,7 +612,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 	#------------------------
 	# CONFIGURE FREESWITCH 
 	#------------------------
-	/bin/grep 'config_done' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'config_done' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "FreeSWITCH already Configured! Skipping."
 	else
@@ -603,7 +632,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 			/bin/echo "ERROR: FreeSWITCH Configure ERROR."
 			exit 1
 		else
-			/bin/echo "config_done" >> /tmp/install_fusion_status
+			/bin/echo "config_done" >> /tmp/install_suite_status
 		fi
 	fi
 
@@ -621,7 +650,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 	#------------------------
 	# COMPILE FREESWITCH 
 	#------------------------
-	/bin/grep 'compile_done' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'compile_done' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "FreeSWITCH already Compiled! Skipping."
 	else
@@ -653,7 +682,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 			/bin/echo "ERROR: FreeSWITCH Build Failure."
 			exit 1
 		else
-			/bin/echo "compile_done" >> /tmp/install_fusion_status
+			/bin/echo "compile_done" >> /tmp/install_suite_status
 		fi
 	fi
 
@@ -665,7 +694,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 	#------------------------
 	# INSTALL FREESWITCH 
 	#------------------------
-	/bin/grep 'install_done' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'install_done' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "FreeSWITCH already Installed! Skipping."
 	else
@@ -694,14 +723,14 @@ if [ $INSFREESWITCH -eq 1 ]; then
 			/bin/echo "ERROR: FreeSWITCH INSTALL Failure."
 			exit 1
 		else
-			/bin/echo "install_done" >> /tmp/install_fusion_status
+			/bin/echo "install_done" >> /tmp/install_suite_status
 		fi
 	fi
 
 	#------------------------
 	# FREESWITCH  HD SOUNDS
 	#------------------------
-	/bin/grep 'sounds_done' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'sounds_done' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "FreeSWITCH HD SOUNDS DONE! Skipping."
 	else
@@ -728,7 +757,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 			/bin/echo "ERROR: FreeSWITCH make cdsounds-install ERROR."
 			exit 1
 		else
-			/bin/echo "sounds_done" >> /tmp/install_fusion_status
+			/bin/echo "sounds_done" >> /tmp/install_suite_status
 		fi
 	fi
 
@@ -741,7 +770,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 	#------------------------
 	# FREESWITCH  MOH
 	#------------------------
-	/bin/grep 'moh_done' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'moh_done' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "FreeSWITCH MOH DONE! Skipping."
 	else
@@ -769,7 +798,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 			/bin/echo "ERROR: FreeSWITCH make cd-moh-install ERROR."
 			exit 1
 		else
-			/bin/echo "moh_done" >> /tmp/install_fusion_status
+			/bin/echo "moh_done" >> /tmp/install_suite_status
 		fi
 	fi
 
@@ -943,7 +972,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 	#------------------------
 	# enable modules.conf.xml
 	#------------------------
-	/bin/grep 'enable_modules' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'enable_modules' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "Modules.conf.xml Already enabled"
 	else
@@ -955,7 +984,7 @@ if [ $INSFREESWITCH -eq 1 ]; then
 			/bin/echo "ERROR: Failed to enable modules in modules.conf.xml."
 			exit 1
 		else
-			/bin/echo "enable_modules" >> /tmp/install_fusion_status
+			/bin/echo "enable_modules" >> /tmp/install_suite_status
 		fi
 	fi
 
@@ -1171,7 +1200,7 @@ DELIM
 	/bin/echo "FreeSWITCH Installation Completed. Have Fun!"
 	/bin/echo
 
-	fusionfail2ban
+	suitefail2ban
 	/etc/init.d/fail2ban restart
 
 
@@ -1193,7 +1222,7 @@ if [ $UPGFREESWITCH -eq 1 ]; then
 	#------------------------
 	# build modules.conf 
 	#------------------------
-	/bin/grep 'build_modules' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'build_modules' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "Modules.conf Already edited"	
 	else
@@ -1205,7 +1234,7 @@ if [ $UPGFREESWITCH -eq 1 ]; then
 			/bin/echo "ERROR: Failed to enable build modules in modules.conf."
 			exit 1
 		else
-			/bin/echo "build_modules" >> /tmp/install_fusion_status
+			/bin/echo "build_modules" >> /tmp/install_suite_status
 		fi
 	fi
 	if [ $DEBUG -eq 1 ]; then
@@ -1217,7 +1246,7 @@ if [ $UPGFREESWITCH -eq 1 ]; then
 	#------------------------
 	# make current 
 	#------------------------
-	/bin/grep 'made_current' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'made_current' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "Modules.conf Already edited"	
 	else
@@ -1353,14 +1382,14 @@ if [ $UPGFREESWITCH -eq 1 ]; then
 			/bin/echo "INSTALL ERROR!"
 			exit 1
 		else 
-			/bin/echo "made_current" >> /tmp/install_fusion_status
+			/bin/echo "made_current" >> /tmp/install_suite_status
 		fi
 	fi
 
 	#------------------------
 	# enable modules.conf.xml
 	#------------------------
-	/bin/grep 'enable_modules' /tmp/install_fusion_status > /dev/null
+	/bin/grep 'enable_modules' /tmp/install_suite_status > /dev/null
 	if [ $? -eq 0 ]; then
 		/bin/echo "Modules.conf.xml Already enabled"
 	else
@@ -1372,7 +1401,7 @@ if [ $UPGFREESWITCH -eq 1 ]; then
 			/bin/echo "ERROR: Failed to enable modules in modules.conf.xml."
 			exit 1
 		else
-			/bin/echo "enable_modules" >> /tmp/install_fusion_status
+			/bin/echo "enable_modules" >> /tmp/install_suite_status
 		fi
 	fi
 
